@@ -1,0 +1,5 @@
+# tlsh_gist extension
+comment = 'tlsh_gist extension'
+default_version = '1.0'
+module_pathname = '$libdir/tlsh_gist'
+relocatable = true
