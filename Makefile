@@ -1,11 +1,11 @@
 MODULE_big = tlsh_gist
-OBJS = tlsh_gist.o
+OBJS = tlsh_gist.o tlsh_type.o
 EXTENSION = tlsh_gist
 DATA = tlsh_gist.sql
 REGRESS = tlsh_gist
 
 # add include and library paths for both Instant Client and regular Client
-PG_CPPFLAGS = -I/usr/local/include
+PG_CPPFLAGS = -I/usr/local/include -DBUCKETS_128
 SHLIB_LINK = -L/usr/local/lib/ -ltlsh
 
 ifdef NO_PGXS
