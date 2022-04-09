@@ -1,5 +1,5 @@
 MODULE_big = tlsh_gist
-OBJS = tlsh_gist.o tlsh_type.o
+OBJS = tlsh_gist.o tlsh_type.o tlsh_impl.o
 EXTENSION = tlsh_gist
 DATA = tlsh_gist--1.0.sql
 REGRESS = tlsh_gist
