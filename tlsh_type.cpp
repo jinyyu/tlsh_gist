@@ -1,9 +1,11 @@
 #include "tlsh_gist.h"
 #include <tlsh/tlsh.h>
 
+
+
 extern "C"
 {
-
+	PG_MODULE_MAGIC;
 	PG_FUNCTION_INFO_V1(tlsh_in);
 	PG_FUNCTION_INFO_V1(tlsh_out);
 }
@@ -65,25 +67,28 @@ void from_hex(const char *psrc, int len, unsigned char *pdest)
 
 Datum tlsh_in(PG_FUNCTION_ARGS)
 {
+	if (PG_ARGISNULL(0))
+		PG_RETURN_NULL();
+
 	char *str = PG_GETARG_CSTRING(0);
-	if (!str ||  strlen(str) != TLSH_HASH_LENGTH) {
-		elog(ERROR, "null tlash");
+	if (strlen(str) != TLSH_HASH_LENGTH) {
+		elog(ERROR, "invalid tlash hash");
 	}
-	Tlsh tlsh;
-	tlsh.
 
 	unsigned char* buffer = (unsigned char*) palloc(TLSH_INTERNAL_LENGTH);
-	from_hex(str, TLSH_INTERNAL_LENGTH, buffer);
+	from_hex(str, TLSH_HASH_LENGTH, buffer);
 
 	PG_RETURN_POINTER(buffer);
 }
 
 Datum tlsh_out(PG_FUNCTION_ARGS)
 {
-	unsigned char *buffer = PG_GETARG_POINTER(0);
-	char *str = palloc(TLSH_HASH_LENGTH + 1);
+	if (PG_ARGISNULL(0))
+		PG_RETURN_NULL();
+	unsigned char *buffer = (unsigned char *)PG_GETARG_POINTER(0);
+	char *str = (char*) palloc(TLSH_HASH_LENGTH + 1);
 	to_hex(buffer, TLSH_INTERNAL_LENGTH, str);
 	str[TLSH_HASH_LENGTH] = 0;
 
-	PG_RETURN_CSTRING(buffer);
+	PG_RETURN_CSTRING(str);
 }

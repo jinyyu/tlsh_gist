@@ -1,7 +1,7 @@
 MODULE_big = tlsh_gist
 OBJS = tlsh_gist.o tlsh_type.o
 EXTENSION = tlsh_gist
-DATA = tlsh_gist.sql
+DATA = tlsh_gist--1.0.sql
 REGRESS = tlsh_gist
 
 # add include and library paths for both Instant Client and regular Client
