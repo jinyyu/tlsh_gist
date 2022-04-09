@@ -8,6 +8,8 @@ REGRESS = tlsh_gist
 PG_CPPFLAGS = -I/usr/local/include -DBUCKETS_128
 SHLIB_LINK = -L/usr/local/lib/ -ltlsh
 
+REGRESS = gist_type
+
 ifdef NO_PGXS
 subdir = contrib/tlsh_gist
 top_builddir = ../..
