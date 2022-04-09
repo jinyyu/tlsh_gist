@@ -5,6 +5,11 @@ extern "C"
 {
 
 	PG_FUNCTION_INFO_V1(tlsh_dist);
+    PG_FUNCTION_INFO_V1(tlsh_consistent);
+    PG_FUNCTION_INFO_V1(tlsh_union);
+    PG_FUNCTION_INFO_V1(tlsh_penalty);
+    PG_FUNCTION_INFO_V1(tlsh_picksplit);
+    PG_FUNCTION_INFO_V1(tlsh_same);
 }
 
 static void construct_tlsh(Tlsh& tlsh, unsigned char * data)
@@ -34,3 +39,28 @@ Datum tlsh_dist(PG_FUNCTION_ARGS)
    PG_RETURN_INT32(diff);
 }
 
+
+Datum tlsh_consistent(PG_FUNCTION_ARGS)
+{
+    elog(ERROR, "tlsh_consistent not impl");
+}
+
+Datum tlsh_union(PG_FUNCTION_ARGS)
+{
+    elog(ERROR, "tlsh_union not impl");
+}
+
+Datum tlsh_penalty(PG_FUNCTION_ARGS)
+{
+    elog(ERROR, "tlsh_penalty not impl");
+}
+
+Datum tlsh_picksplit(PG_FUNCTION_ARGS)
+{
+    elog(ERROR, "tlsh_picksplit not impl");
+}
+
+Datum tlsh_same(PG_FUNCTION_ARGS)
+{
+    elog(ERROR, "tlsh_same not impl");
+}
