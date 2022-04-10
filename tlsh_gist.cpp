@@ -75,7 +75,16 @@ Datum tlsh_union(PG_FUNCTION_ARGS)
 
 Datum tlsh_penalty(PG_FUNCTION_ARGS)
 {
-    elog(ERROR, "tlsh_penalty not impl");
+    elog(INFO, "tlsh_penalty");
+
+    GISTENTRY *origentry = (GISTENTRY *)PG_GETARG_POINTER(0);
+    GISTENTRY *newentry = (GISTENTRY *)PG_GETARG_POINTER(1);
+    float *penalty = (float *)PG_GETARG_POINTER(2);
+
+    int32 dist = DatumGetInt32(DirectFunctionCall2(tlsh_dist, origentry->key, newentry->key));
+
+    *penalty = float(dist);
+    PG_RETURN_POINTER(penalty);
 }
 
 Datum tlsh_picksplit(PG_FUNCTION_ARGS)
@@ -94,17 +103,16 @@ Datum tlsh_picksplit(PG_FUNCTION_ARGS)
     int right_number = 1;
     int max_dist = 0;
 
-
     for (OffsetNumber i = FirstOffsetNumber; i <= maxoff; i = OffsetNumberNext(i))
     {
-        for (OffsetNumber j = i + 1; j <= maxoff; j = OffsetNumberNext(j)) 
+        for (OffsetNumber j = i + 1; j <= maxoff; j = OffsetNumberNext(j))
         {
             Datum datum_i = entryvec->vector[i].key;
             Datum datum_j = entryvec->vector[j].key;
             int32 dist = DatumGetInt32(DirectFunctionCall2(tlsh_dist, datum_i, datum_j));
             dist_table[i][j] = dist;
             dist_table[j][i] = dist;
-            if (dist > max_dist) 
+            if (dist > max_dist)
             {
                 left_number = i;
                 right_number = j;
@@ -113,24 +121,24 @@ Datum tlsh_picksplit(PG_FUNCTION_ARGS)
         }
     }
 
-    v->spl_left = (OffsetNumber*)palloc0(entryvec->n  * sizeof(OffsetNumber));
-    v->spl_ldatum =  entryvec->vector[left_number].key;
+    v->spl_left = (OffsetNumber *)palloc0(entryvec->n * sizeof(OffsetNumber));
+    v->spl_ldatum = entryvec->vector[left_number].key;
 
-    v->spl_right = (OffsetNumber*)palloc0(entryvec->n  * sizeof(OffsetNumber));
-    v->spl_rdatum =  entryvec->vector[right_number].key;
+    v->spl_right = (OffsetNumber *)palloc0(entryvec->n * sizeof(OffsetNumber));
+    v->spl_rdatum = entryvec->vector[right_number].key;
 
     for (OffsetNumber i = FirstOffsetNumber; i <= maxoff; i = OffsetNumberNext(i))
     {
         int32 left_dist = dist_table[i][left_number];
-        int32 right_dist =  dist_table[i][right_number];
+        int32 right_dist = dist_table[i][right_number];
         if (left_dist < right_dist)
         {
             //离左边近
-            v->spl_left[v->spl_nleft ++ ] = i;
+            v->spl_left[v->spl_nleft++] = i;
         }
-        else 
+        else
         {
-            v->spl_right[v->spl_nright ++] = i;
+            v->spl_right[v->spl_nright++] = i;
         }
     }
 
