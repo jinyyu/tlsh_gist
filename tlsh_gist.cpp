@@ -85,5 +85,13 @@ Datum tlsh_picksplit(PG_FUNCTION_ARGS)
 
 Datum tlsh_same(PG_FUNCTION_ARGS)
 {
-    elog(ERROR, "tlsh_same not impl");
+    elog(INFO, "tlsh_same");
+
+    Datum d1 = ObjectIdGetDatum(PG_GETARG_POINTER(0));
+    Datum d2 = ObjectIdGetDatum(PG_GETARG_POINTER(1));
+    bool *result = (bool *)PG_GETARG_POINTER(2);
+
+    int ret = memcmp((void *)d1, (void *)d2, TLSH_INTERNAL_LENGTH);
+    *result = (ret == 0 ? true : false);
+    PG_RETURN_POINTER(result);
 }
