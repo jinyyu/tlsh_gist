@@ -5,7 +5,6 @@
 
 extern "C"
 {
-	PG_MODULE_MAGIC;
 	PG_FUNCTION_INFO_V1(tlsh_in);
 	PG_FUNCTION_INFO_V1(tlsh_out);
 }
