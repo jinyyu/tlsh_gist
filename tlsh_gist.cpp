@@ -60,7 +60,7 @@ Datum tlsh_consistent(PG_FUNCTION_ARGS)
         elog(ERROR, "invalid strategy %d", strategy);
     }
 
-    int dist = DatumGetInt32(DirectFunctionCall2(tlsh_dist, query, key));
+    int32 dist = DatumGetInt32(DirectFunctionCall2(tlsh_dist, query, key));
 
     retval = (dist <= tlsh_dist_threshold ? true : false);
     *recheck = false; /* or false if check is exact */
@@ -80,7 +80,61 @@ Datum tlsh_penalty(PG_FUNCTION_ARGS)
 
 Datum tlsh_picksplit(PG_FUNCTION_ARGS)
 {
-    elog(ERROR, "tlsh_picksplit not impl");
+    elog(INFO, "tlsh_picksplit");
+
+    GistEntryVector *entryvec = (GistEntryVector *)PG_GETARG_POINTER(0);
+    GIST_SPLITVEC *v = (GIST_SPLITVEC *)PG_GETARG_POINTER(1);
+    OffsetNumber maxoff = entryvec->n - 1; /* Valid items in entryvec->vector[] are indexed 1..maxoff */
+
+    memset(v, 0, sizeof(GIST_SPLITVEC));
+
+    int32 dist_table[maxoff + 1][maxoff + 1];
+    memset(dist_table, 0, sizeof(dist_table));
+    int left_number = 1;
+    int right_number = 1;
+    int max_dist = 0;
+
+
+    for (OffsetNumber i = FirstOffsetNumber; i <= maxoff; i = OffsetNumberNext(i))
+    {
+        for (OffsetNumber j = i + 1; j <= maxoff; j = OffsetNumberNext(j)) 
+        {
+            Datum datum_i = entryvec->vector[i].key;
+            Datum datum_j = entryvec->vector[j].key;
+            int32 dist = DatumGetInt32(DirectFunctionCall2(tlsh_dist, datum_i, datum_j));
+            dist_table[i][j] = dist;
+            dist_table[j][i] = dist;
+            if (dist > max_dist) 
+            {
+                left_number = i;
+                right_number = j;
+                max_dist = dist;
+            }
+        }
+    }
+
+    v->spl_left = (OffsetNumber*)palloc0(entryvec->n  * sizeof(OffsetNumber));
+    v->spl_ldatum =  entryvec->vector[left_number].key;
+
+    v->spl_right = (OffsetNumber*)palloc0(entryvec->n  * sizeof(OffsetNumber));
+    v->spl_rdatum =  entryvec->vector[right_number].key;
+
+    for (OffsetNumber i = FirstOffsetNumber; i <= maxoff; i = OffsetNumberNext(i))
+    {
+        int32 left_dist = dist_table[i][left_number];
+        int32 right_dist =  dist_table[i][right_number];
+        if (left_dist < right_dist)
+        {
+            //离左边近
+            v->spl_left[v->spl_nleft ++ ] = i;
+        }
+        else 
+        {
+            v->spl_right[v->spl_nright ++] = i;
+        }
+    }
+
+    PG_RETURN_POINTER(v);
 }
 
 Datum tlsh_same(PG_FUNCTION_ARGS)
