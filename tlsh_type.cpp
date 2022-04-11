@@ -21,19 +21,32 @@ Datum tlsh_in(PG_FUNCTION_ARGS)
 		elog(ERROR, "invalid tlash hash");
 	}
 
-	unsigned char* buffer = (unsigned char*) palloc(TLSH_INTERNAL_LENGTH);
-	from_hex(str, TLSH_HASH_LENGTH, buffer);
+    lsh_bin tmp;
+    
+	from_hex(str, TLSH_HASH_LENGTH, (uint8*)&tmp);
 
-	PG_RETURN_POINTER(buffer);
+    lsh_bin* lsh = (lsh_bin*) palloc0(TLSH_INTERNAL_LENGTH);
+    
+    // Reconstruct checksum, Qrations & lvalue
+	for (int k = 0; k < TLSH_CHECKSUM_LEN; k++) {    
+		lsh->checksum[k] = swap_byte(tmp.checksum[k]);
+	}
+	lsh->Lvalue = swap_byte( tmp.Lvalue );
+	lsh->Q.QB = swap_byte(tmp.Q.QB);
+	for( int i=0; i < CODE_SIZE; i++ ){
+		lsh->tmp_code[i] = (tmp.tmp_code[CODE_SIZE-1-i]);
+	}
+
+	PG_RETURN_POINTER(lsh);
 }
 
 Datum tlsh_out(PG_FUNCTION_ARGS)
 {
 	if (PG_ARGISNULL(0))
 		PG_RETURN_NULL();
-	unsigned char *buffer = (unsigned char *)PG_GETARG_POINTER(0);
+	lsh_bin* lsh = (lsh_bin *)PG_GETARG_POINTER(0);
 	char *str = (char*) palloc(TLSH_HASH_LENGTH + 1);
-	to_hex(buffer, TLSH_INTERNAL_LENGTH, str);
+	to_hex((uint8*)lsh, TLSH_INTERNAL_LENGTH, str);
 	str[TLSH_HASH_LENGTH] = 0;
 
 	PG_RETURN_CSTRING(str);
