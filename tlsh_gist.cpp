@@ -15,6 +15,7 @@ extern "C"
     PG_FUNCTION_INFO_V1(tlsh_penalty);
     PG_FUNCTION_INFO_V1(tlsh_picksplit);
     PG_FUNCTION_INFO_V1(tlsh_same);
+    PG_FUNCTION_INFO_V1(tlsh_distance);
 }
 
 static Datum copy_tlsh(Datum src);
@@ -45,15 +46,20 @@ Datum tlsh_consistent(PG_FUNCTION_ARGS)
     Datum key = ObjectIdGetDatum(entry->key);
     bool retval;
 
-    if (strategy != DistanceStrategyNumber)
+    switch (strategy)
     {
+    case TLSHEqualStrategyNumber:
+    case TLSHDistanceStrategyNumber:
+        break;
+    default:
         elog(ERROR, "invalid strategy %d", strategy);
+        break;
     }
 
     int32 dist = DatumGetInt32(DirectFunctionCall2(tlsh_dist, query, key));
 
     retval = (dist <= tlsh_dist_threshold ? true : false);
-    *recheck = false; /* or false if check is exact */
+    *recheck = true; /* or false if check is exact */
 
     PG_RETURN_BOOL(retval);
 }
@@ -66,7 +72,8 @@ Datum tlsh_union(PG_FUNCTION_ARGS)
 
     if (numranges <= 2)
     {
-        PG_RETURN_POINTER(copy_tlsh(enties[0].key));
+        int index = rand() % numranges;
+        PG_RETURN_POINTER(copy_tlsh(enties[index].key));
     }
 
     int32 dist_table[numranges + 1][numranges + 1];
@@ -184,10 +191,37 @@ Datum tlsh_same(PG_FUNCTION_ARGS)
     Datum d1 = ObjectIdGetDatum(PG_GETARG_POINTER(0));
     Datum d2 = ObjectIdGetDatum(PG_GETARG_POINTER(1));
     bool *result = (bool *)PG_GETARG_POINTER(2);
-
-    int ret = memcmp((void *)d1, (void *)d2, TLSH_INTERNAL_LENGTH);
-    *result = (ret == 0 ? true : false);
+    
+    int cmp = tlsh_cmp(d1, d2);
+    *result = (cmp == 0);
     PG_RETURN_POINTER(result);
+}
+
+Datum tlsh_distance(PG_FUNCTION_ARGS)
+{
+    GISTENTRY  *entry = (GISTENTRY *) PG_GETARG_POINTER(0);
+        Datum  query = PG_GETARG_DATUM(1);
+    StrategyNumber strategy = (StrategyNumber) PG_GETARG_UINT16(2);
+    /* Oid subtype = PG_GETARG_OID(3); */
+    bool *recheck = (bool *) PG_GETARG_POINTER(4);
+    Datum key = ObjectIdGetDatum(entry->key);
+    
+    switch (strategy)
+    {
+    case TLSHEqualStrategyNumber:
+    case TLSHDistanceStrategyNumber:
+        break;
+    default:
+        elog(ERROR, "invalid strategy %d", strategy);
+        break;
+    }
+    
+    int32 dist = DatumGetInt32(DirectFunctionCall2(tlsh_dist, query, key));
+    double retval = double(dist);
+
+    *recheck = true; /* or false if check is exact */
+
+    PG_RETURN_FLOAT8(retval);
 }
 
 Datum copy_tlsh(Datum src)

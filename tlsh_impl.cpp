@@ -52,3 +52,8 @@ void from_hex(const char *psrc, int len, unsigned char *pdest)
 		*pdest++ = d;
 	}
 }
+
+int tlsh_cmp(Datum d1, Datum d2)
+{
+	return memcmp((void *)d1, (void *)d2, TLSH_INTERNAL_LENGTH);
+}

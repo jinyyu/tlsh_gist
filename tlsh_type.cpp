@@ -7,6 +7,7 @@ extern "C"
 {
 	PG_FUNCTION_INFO_V1(tlsh_in);
 	PG_FUNCTION_INFO_V1(tlsh_out);
+	PG_FUNCTION_INFO_V1(tlsh_equal);
 }
 
 
@@ -36,4 +37,13 @@ Datum tlsh_out(PG_FUNCTION_ARGS)
 	str[TLSH_HASH_LENGTH] = 0;
 
 	PG_RETURN_CSTRING(str);
+}
+
+Datum tlsh_equal(PG_FUNCTION_ARGS)
+{
+	Datum d1 = ObjectIdGetDatum(PG_GETARG_POINTER(0));
+    Datum d2 = ObjectIdGetDatum(PG_GETARG_POINTER(1));
+
+    int cmp = tlsh_cmp(d1, d2);
+	PG_RETURN_BOOL(cmp == 0);
 }

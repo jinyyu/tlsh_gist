@@ -28,6 +28,26 @@ CREATE OPERATOR <-> (
         COMMUTATOR = '<->'
 );
 
+CREATE FUNCTION tlsh_equal(tlsh, tlsh)
+RETURNS bool
+AS 'MODULE_PATHNAME'
+LANGUAGE C STRICT IMMUTABLE PARALLEL SAFE;
+
+CREATE OPERATOR = (
+        LEFTARG = tlsh,
+        RIGHTARG = tlsh,
+        PROCEDURE = tlsh_equal,
+        COMMUTATOR = '='
+);
+
+
+-- gist function
+CREATE FUNCTION tlsh_same(tlsh, tlsh)
+RETURNS bool
+AS 'MODULE_PATHNAME'
+LANGUAGE C STRICT IMMUTABLE PARALLEL SAFE;
+
+
 CREATE FUNCTION tlsh_consistent(internal, tlsh, smallint, oid, internal)
 RETURNS bool
 AS 'MODULE_PATHNAME'
@@ -53,13 +73,21 @@ RETURNS internal
 AS 'MODULE_PATHNAME'
 LANGUAGE C STRICT;
 
+CREATE FUNCTION tlsh_distance(internal, tlsh, smallint, oid, internal)
+RETURNS float8
+AS 'MODULE_PATHNAME'
+LANGUAGE C STRICT;
+
+
 CREATE OPERATOR CLASS gist_tlsh_ops
 FOR TYPE tlsh USING gist
 AS
-        OPERATOR        1       <-> (tlsh, tlsh) FOR ORDER BY pg_catalog.float_ops,
+        OPERATOR	    1	    = ,
+        OPERATOR        2       <-> (tlsh, tlsh) FOR ORDER BY pg_catalog.float_ops,
         FUNCTION        1       tlsh_consistent (internal, tlsh, smallint, oid, internal),
         FUNCTION        2       tlsh_union (internal, internal),
         FUNCTION        5       tlsh_penalty (internal, internal, internal),
         FUNCTION        6       tlsh_picksplit (internal, internal),
         FUNCTION        7       tlsh_same (tlsh, tlsh, internal),
+        FUNCTION        8       tlsh_distance (internal, tlsh, smallint, oid, internal),
         STORAGE         tlsh;
