@@ -71,5 +71,6 @@ extern unsigned char swap_byte( const unsigned char in );
 
 extern int tlsh_cmp(Datum d1, Datum d2);
 extern int tlsh_dist_impl(lsh_bin* lsh1, lsh_bin* lsh2, bool len_diff);
+extern void tlsh_tow_mean(lsh_bin* lsh1, lsh_bin* lsh2, lsh_bin* output);
 
 #endif

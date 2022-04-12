@@ -9,6 +9,8 @@
 
 extern "C"
 {
+    PG_FUNCTION_INFO_V1(tlsh_mean);
+
     PG_FUNCTION_INFO_V1(tlsh_dist);
     PG_FUNCTION_INFO_V1(tlsh_consistent);
     PG_FUNCTION_INFO_V1(tlsh_union);
@@ -29,6 +31,17 @@ Datum tlsh_dist(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(diff);
 }
 
+Datum tlsh_mean(PG_FUNCTION_ARGS)
+{
+	Datum d1 = ObjectIdGetDatum(PG_GETARG_POINTER(0));
+	Datum d2 = ObjectIdGetDatum(PG_GETARG_POINTER(1));
+	lsh_bin *lsh = (lsh_bin *)palloc0(TLSH_INTERNAL_LENGTH);
+
+	tlsh_tow_mean((lsh_bin *)d1, (lsh_bin *)d2, lsh);
+
+	PG_RETURN_POINTER(lsh);
+}
+
 Datum tlsh_consistent(PG_FUNCTION_ARGS)
 {
     GISTENTRY *entry = (GISTENTRY *)PG_GETARG_POINTER(0);
@@ -39,6 +52,7 @@ Datum tlsh_consistent(PG_FUNCTION_ARGS)
     Datum key = ObjectIdGetDatum(entry->key);
     bool retval;
 
+    elog(INFO, "tlsh_consistent");
     switch (strategy)
     {
     case TLSHEqualStrategyNumber:
@@ -63,10 +77,15 @@ Datum tlsh_union(PG_FUNCTION_ARGS)
     GISTENTRY *enties = entryvec->vector;
     int numranges = entryvec->n;
 
-    if (numranges <= 2)
+    Assert(numranges >= 2);
+
+    elog(INFO, "union %d", numranges);
+
+    if (numranges == 2)
     {
-        int index = rand() % numranges;
-        PG_RETURN_POINTER(copy_tlsh(enties[index].key));
+        // 只有两个节点，算出一个中间节点
+        Datum mean = DirectFunctionCall2(tlsh_mean, enties[0].key, enties[1].key);
+        PG_RETURN_POINTER(mean);
     }
 
     int32 dist_table[numranges + 1][numranges + 1];
@@ -210,6 +229,7 @@ Datum tlsh_distance(PG_FUNCTION_ARGS)
     }
 
     int32 dist = DatumGetInt32(DirectFunctionCall2(tlsh_dist, query, key));
+    elog(INFO, "tlsh_distance %d", dist);
     double retval = double(dist);
 
     *recheck = true; /* or false if check is exact */
