@@ -1,7 +1,7 @@
 #include "tlsh_gist.h"
 
 
-int32 tlsh_dist_threshold = 50;
+int32 tlsh_dist_threshold = 150;
 
 extern "C"
 {

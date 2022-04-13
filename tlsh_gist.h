@@ -12,6 +12,7 @@ extern "C"
 
 #define TLSHEqualStrategyNumber 1    // =
 #define TLSHDistanceStrategyNumber 2 // <->
+#define TLSHsimilarityStrategyNumber 3 // %
 
 extern int32 tlsh_dist_threshold;
 

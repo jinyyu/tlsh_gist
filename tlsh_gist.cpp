@@ -10,6 +10,7 @@
 extern "C"
 {
     PG_FUNCTION_INFO_V1(tlsh_mean);
+    PG_FUNCTION_INFO_V1(tlsh_similarity_op);
 
     PG_FUNCTION_INFO_V1(tlsh_dist);
     PG_FUNCTION_INFO_V1(tlsh_consistent);
@@ -31,7 +32,7 @@ Datum tlsh_dist(PG_FUNCTION_ARGS)
 
     int diff = tlsh_dist_impl(left_data, right_data, true);
 
-    PG_RETURN_FLOAT4(diff);
+    PG_RETURN_INT32(diff);
 }
 
 Datum tlsh_mean(PG_FUNCTION_ARGS)
@@ -45,6 +46,13 @@ Datum tlsh_mean(PG_FUNCTION_ARGS)
 	PG_RETURN_POINTER(lsh);
 }
 
+Datum tlsh_similarity_op(PG_FUNCTION_ARGS)
+{
+    int32 res = DatumGetInt32(DirectFunctionCall2(tlsh_dist, PG_GETARG_DATUM(0), PG_GETARG_DATUM(1)));
+
+	PG_RETURN_BOOL(res <= tlsh_dist_threshold);
+}
+
 Datum tlsh_consistent(PG_FUNCTION_ARGS)
 {
     GISTENTRY *entry = (GISTENTRY *)PG_GETARG_POINTER(0);
@@ -55,11 +63,11 @@ Datum tlsh_consistent(PG_FUNCTION_ARGS)
     Datum key = ObjectIdGetDatum(entry->key);
     bool retval;
 
-    elog(INFO, "tlsh_consistent");
     switch (strategy)
     {
     case TLSHEqualStrategyNumber:
     case TLSHDistanceStrategyNumber:
+    case TLSHsimilarityStrategyNumber:
         break;
     default:
         elog(ERROR, "invalid strategy %d", strategy);
@@ -236,6 +244,7 @@ Datum tlsh_distance(PG_FUNCTION_ARGS)
     {
     case TLSHEqualStrategyNumber:
     case TLSHDistanceStrategyNumber:
+    case TLSHsimilarityStrategyNumber:
         break;
     default:
         elog(ERROR, "invalid strategy %d", strategy);
@@ -243,7 +252,6 @@ Datum tlsh_distance(PG_FUNCTION_ARGS)
     }
 
     int32 dist = DatumGetInt32(DirectFunctionCall2(tlsh_dist, query, key));
-    elog(INFO, "tlsh_distance %d", dist);
     double retval = double(dist);
 
     *recheck = false; /* or false if check is exact */

@@ -12,8 +12,15 @@ select v <-> NULL  as diff from test_tlsh;
 
 CREATE INDEX tlsh_idx ON test_tlsh USING GIST (v gist_tlsh_ops);
 
-SELECT v, '30e5be217761c8b1c27213314d18b62a58bdbdf02b35d2ababe9352c5e780c1b677795' <-> v AS dist
-  FROM test_tlsh
-  ORDER BY dist LIMIT 1;
+
+-- index scan
+SELECT v, '30e5be217761c8b1c27213314d18b62a58bdbdf02b35d2ababe9352c5e780c1b677795' <-> v AS dist FROM test_tlsh ORDER BY dist LIMIT 1;
+
+--seq scan
+select v, tlsh_dist(v, '30e5be217761c8b1c27213314d18b62a58bdbdf02b35d2ababe9352c5e780c1b677795') as dist FROM test_tlsh ORDER BY dist LIMIT 1; 
+
+
+-- % operator
+select v, v <-> '30e5be217761c8b1c27213314d18b62a58bdbdf02b35d2ababe9352c5e780c1b677795' as dist from test_tlsh where v % '30e5be217761c8b1c27213314d18b62a58bdbdf02b35d2ababe9352c5e780c1b677795' order by dist asc;
 
 
