@@ -14,6 +14,8 @@ extern "C"
     PG_FUNCTION_INFO_V1(tlsh_dist);
     PG_FUNCTION_INFO_V1(tlsh_consistent);
     PG_FUNCTION_INFO_V1(tlsh_union);
+    PG_FUNCTION_INFO_V1(tlsh_compress);
+    PG_FUNCTION_INFO_V1(tlsh_decompress);
     PG_FUNCTION_INFO_V1(tlsh_penalty);
     PG_FUNCTION_INFO_V1(tlsh_picksplit);
     PG_FUNCTION_INFO_V1(tlsh_same);
@@ -28,7 +30,8 @@ Datum tlsh_dist(PG_FUNCTION_ARGS)
     lsh_bin *right_data = (lsh_bin *)PG_GETARG_POINTER(1);
 
     int diff = tlsh_dist_impl(left_data, right_data, true);
-    PG_RETURN_INT32(diff);
+
+    PG_RETURN_FLOAT4(diff);
 }
 
 Datum tlsh_mean(PG_FUNCTION_ARGS)
@@ -66,7 +69,7 @@ Datum tlsh_consistent(PG_FUNCTION_ARGS)
     int32 dist = DatumGetInt32(DirectFunctionCall2(tlsh_dist, query, key));
 
     retval = (dist <= tlsh_dist_threshold ? true : false);
-    *recheck = true; /* or false if check is exact */
+    *recheck = false; /* or false if check is exact */
 
     PG_RETURN_BOOL(retval);
 }
@@ -129,6 +132,17 @@ Datum tlsh_union(PG_FUNCTION_ARGS)
 
     PG_RETURN_POINTER(copy_tlsh(enties[min_index].key));
 }
+
+Datum tlsh_compress(PG_FUNCTION_ARGS)
+{
+	PG_RETURN_POINTER(PG_GETARG_POINTER(0));
+}
+
+Datum tlsh_decompress(PG_FUNCTION_ARGS)
+{
+	PG_RETURN_POINTER(PG_GETARG_POINTER(0));
+}
+
 
 Datum tlsh_penalty(PG_FUNCTION_ARGS)
 {
@@ -232,7 +246,7 @@ Datum tlsh_distance(PG_FUNCTION_ARGS)
     elog(INFO, "tlsh_distance %d", dist);
     double retval = double(dist);
 
-    *recheck = true; /* or false if check is exact */
+    *recheck = false; /* or false if check is exact */
 
     PG_RETURN_FLOAT8(retval);
 }
